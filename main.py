@@ -63,19 +63,18 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                    kernel_initializer= tf.random_normal_initializer(stddev=0.01),
                                    kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-4))
     # upsample
-    layer4_tr_in = tf.layers.conv2d_transpose(layer7_x1_out, num_classes, 3, strides= (2, 2), padding= 'same', 
+    layer4_tr_in = tf.layers.conv2d_transpose(layer7_x1_out, num_classes, 4, strides= (2, 2), padding= 'same', 
                                              kernel_initializer= tf.random_normal_initializer(stddev=0.01),
                                              kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-4))
     # make sure the shapes are the same!
     # 1x1 convolution of vgg layer 4
-    layer4_x1_in = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, 
-                                   padding='same', 
+    layer4_x1_in = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', 
                                    kernel_initializer= tf.random_normal_initializer(stddev=0.01),
                                    kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-4))
     # skip connection (element-wise addition)
     layer4_sk_out = tf.add(layer4_x1_in, layer4_tr_in)
     # upsample
-    layer3_tr_in = tf.layers.conv2d_transpose(layer4_sk_out, num_classes, 5, strides=(2, 2), padding='same', 
+    layer3_tr_in = tf.layers.conv2d_transpose(layer4_sk_out, num_classes, 4, strides=(2, 2), padding='same', 
                                              kernel_initializer= tf.random_normal_initializer(stddev=0.01),
                                              kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-4))
     # 1x1 convolution of vgg layer 3
@@ -87,7 +86,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     # upsample
     nn_last_layer = tf.layers.conv2d_transpose(layer3_sk_out, num_classes, 16, strides=(8, 8), padding='same', 
                                                kernel_initializer= tf.random_normal_initializer(stddev=0.01),
-                                               kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-4))
+                                               kernel_regularizer= tf.contrib.layers.l2_regularizer(1e-3))
     
     return nn_last_layer
 
@@ -135,7 +134,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     """
     # TODO: Implement function
     sess.run(tf.global_variables_initializer())
-    mx_loss = 0.02
+    mx_loss = 0.015
     print("Training...")
     print()
     for i in range(epochs):
@@ -144,14 +143,15 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("EPOCH {} ...".format(i+1))
         for image, label in get_batches_fn(batch_size):
             _, loss = sess.run([train_op, cross_entropy_loss], 
-                               feed_dict={input_image: image, correct_label: label, keep_prob: 0.6, learning_rate: 0.000031})
+                               feed_dict={input_image: image, correct_label: label, keep_prob: 0.5, learning_rate: 0.0001})
             c_loss = round(loss, 3)
             avg_ls += c_loss
             cnt += 1
             print("Loss =", c_loss)
         avg_ls /= cnt
         avg_ls = round(avg_ls, 3)
-        # get model with loss less than or equal to 0.02
+        # get model with loss less than or equal to 0.015
+        print("Epoch Average Loss:", avg_ls)
         if avg_ls <= mx_loss:
             break
         print()
@@ -182,8 +182,8 @@ def run():
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
-        epochs = 50
-        batch_size = 6
+        epochs = 60
+        batch_size = 5
         # TODO: Build NN using load_vgg, layers, and optimize function
         # TF placeholders
         correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
