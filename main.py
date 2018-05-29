@@ -104,14 +104,18 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
     # TODO: Implement function
     # make logits a 2D tensor where each row represents a pixel and each column a class
+    reg_constant = 0.01
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     correct_label = tf.reshape(correct_label, (-1, num_classes))
     # define loss function
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
     # define training operation
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-    train_op = optimizer.minimize(cross_entropy_loss)
-
+    # get regularization losses
+    reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    loss = cross_entropy_loss + reg_constant * sum(reg_losses)
+    train_op = optimizer.minimize(loss)
+    
     return logits, train_op, cross_entropy_loss
 
 tests.test_optimize(optimize)
