@@ -109,14 +109,14 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     correct_label = tf.reshape(correct_label, (-1, num_classes))
     # define loss function
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
-    # define training operation
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     # get regularization losses
     reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
     loss = cross_entropy_loss + reg_constant * sum(reg_losses)
+    # define training operation
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     train_op = optimizer.minimize(loss)
     
-    return logits, train_op, cross_entropy_loss
+    return logits, train_op, loss
 
 tests.test_optimize(optimize)
 
@@ -138,7 +138,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     """
     # TODO: Implement function
     sess.run(tf.global_variables_initializer())
-    mx_loss = 0.015
+    mx_loss = 0.020
     print("Training...")
     print()
     for i in range(epochs):
@@ -154,7 +154,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
             print("Loss =", c_loss)
         avg_ls /= cnt
         avg_ls = round(avg_ls, 3)
-        # get model with loss less than or equal to 0.015
+        # get model with loss less than or equal to 0.02
         print("Epoch Average Loss:", avg_ls)
         if avg_ls <= mx_loss:
             break
@@ -186,8 +186,8 @@ def run():
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
-        epochs = 70
-        batch_size = 8
+        epochs = 70	# usually converges before 50 epochs
+        batch_size = 5
         # TODO: Build NN using load_vgg, layers, and optimize function
         # TF placeholders
         correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
